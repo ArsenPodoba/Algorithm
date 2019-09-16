@@ -1,3 +1,5 @@
+// Gaussian elimination with finding the largest element in a column.
+
 #include <iostream>
 #include <vector>
 #include <fstream>
