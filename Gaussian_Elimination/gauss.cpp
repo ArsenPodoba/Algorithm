@@ -19,6 +19,7 @@ pair<vector<vector<long double>>, vector<long double>> open_file (const string& 
 
         int n;
         my_file >> n;
+        
         vector<vector<long double>> matrix(n, vector<long double>(n));
         vector<long double> b(n);
 
@@ -35,6 +36,7 @@ pair<vector<vector<long double>>, vector<long double>> open_file (const string& 
         }
 
         my_file.close();
+        
         return make_pair(matrix, b);
     } else {
 
