@@ -1,4 +1,4 @@
-// Gaussian elimination with finding the largest element in a column.
+// Gaussian elimination with finding the largest element in a submatrix.
 
 #include <iostream>
 #include <vector>
