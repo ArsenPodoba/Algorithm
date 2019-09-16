@@ -6,11 +6,12 @@
 #include <iomanip>
 #include <cmath>
 
-#define EPS 1E-18
+#define EPS 0.1E-18
 
 using namespace std;
 
 int p = 0;
+int index_in_answer[1000000];
 
 // A function that reads data from a file and returns a coefficient matrix and a vector of free terms.
 pair<vector<vector<long double>>, vector<long double>> open_file (const string& PATH) {
@@ -20,8 +21,9 @@ pair<vector<vector<long double>>, vector<long double>> open_file (const string& 
     if (my_file.is_open()) {
 
         int n;
+
         my_file >> n;
-        
+
         vector<vector<long double>> matrix(n, vector<long double>(n));
         vector<long double> b(n);
 
@@ -37,8 +39,6 @@ pair<vector<vector<long double>>, vector<long double>> open_file (const string& 
             }
         }
 
-        my_file.close();
-        
         return make_pair(matrix, b);
     } else {
 
@@ -56,45 +56,65 @@ pair<vector<vector<long double>>, vector<long double>> gauss (vector<vector<long
 
     int n = matrix.size();
 
-    for (int i = 0; i < n - 1; i++) {
+    // We remember the order of the roots because in this method
+    // we will change the columns and the order of the roots from that changes.
+    for(int i  = 0; i < n; i++){
+        index_in_answer[i] = i;
+    }
 
-        // Find max element in the column.
+    for(int i = 0; i < n - 1; i++){
+
         long double max = abs(matrix[i][i]);
-        long double max_index = i;
-
-        // Flag to see if we found a larger item than the diagonal item.
+        int i_index = i;
+        int j_index = i;
         bool flag = false;
 
-        for (int j = i + 1; j < n; j++) {
+        // Search for the largest element in the submatrix.
+        for(int ii = i; ii < n; ii++){
 
-            if (max < abs(matrix[j][i])) {
+            for(int j = i; j < n; j++){
 
-                max = abs(matrix[j][i]);
-                max_index = j;
-                flag = true;
+                if(max < abs(matrix[ii][j])){
+
+                    max = abs(matrix[ii][j]);
+                    i_index = ii;
+                    j_index = j;
+                    flag = true;
+                }
             }
         }
 
-        // If we found larger item than the diagonal item we will swap and we will change value of determinant on opposite.
-        // And we have counter how much we did this.
         if(flag){
-            p++;
+
+            // If we found max element in another row and column we must swap row and column and determinant will change twice.
+            if(i_index != i && j_index != i)
+                p += 2;
+            // Else we swap row or column and determinant will change once.
+            else
+                p++;
         }
 
         // Swap row.
-        for (int j = 0; j < n; j++) {
+        for(int j = 0; j < n; j++){
 
-            swap(matrix[max_index][j], matrix[i][j]);
+            swap(matrix[i_index][j], matrix[i][j]);
         }
 
-        // Swap free terms
-        swap(b[max_index], b[i]);
+        // Swap column.
+        for(int j = 0; j < n; j++){
+
+            swap(matrix[j][j_index], matrix[j][i]);
+        }
+
+        // Swap order of the root if we swapped column.
+        swap(index_in_answer[i], index_in_answer[j_index]);
+
+        swap(b[i_index], b[i]);
 
         // We look for coefficients to zero the elements under the main diagonal and do it.
         for (int j = i + 1; j < n; j++) {
 
             long double tik = -1 * (matrix[j][i] / matrix[i][i]);
-
             // Change a free terms.
             b[j] = b[j] + b[i] * tik;
 
@@ -127,8 +147,6 @@ void write_answer(vector<vector<long double>> matrix, vector<long double> b, con
 
             my_file << "The matrix has no unambiguous solution";
             my_file << "\nThe determinant of matrix is: 0";
-            my_file.close();
-
             return;
         }
     }
@@ -136,17 +154,17 @@ void write_answer(vector<vector<long double>> matrix, vector<long double> b, con
     // If main diagonal has not value close to zero, calculating solution
     vector<long double> result(n);
 
-    result[n - 1] = b[n - 1] / matrix[n - 1][n - 1];
+    result[index_in_answer[n - 1]] = b[n - 1] / matrix[n - 1][n - 1];
 
     for (int i = n - 2; i >= 0; i--) {
 
         long double adder_to_free_elements = 0.0;
 
         for (int k = i + 1; k < n; k++) {
-            adder_to_free_elements += matrix[i][k] * result[k];
+            adder_to_free_elements += matrix[i][k] * result[index_in_answer[k]];
         }
 
-        result[i] = (b[i] - adder_to_free_elements) / matrix[i][i];
+        result[index_in_answer[i]] = (b[i] - adder_to_free_elements) / matrix[i][i];
     }
 
     // Write in file.
@@ -157,17 +175,16 @@ void write_answer(vector<vector<long double>> matrix, vector<long double> b, con
     }
 
     my_file << "The determinant of matrix is: " << determinant*pow(-1, p);
-    my_file.close();
 }
 
 int main() {
 
-    const string PATH = R"(D:\Projects\Numerical Methods\Gauss\Matrix1.txt)", PATH_ANSWER = R"(D:\Projects\Numerical Methods\Gauss\Answer1.txt)";
+    const string PATH = R"(D:\Projects\Numerical Methods\AdvancedGauss\Matrix4.txt)", PATH_ANSWER = R"(D:\Projects\Numerical Methods\AdvancedGauss\Answer4.txt)";
 
     pair<vector<vector<long double>>, vector<long double>> matrix_and_b = open_file(PATH);
 
     pair<vector<vector<long double>>, vector<long double >> triangle_matrix = gauss(matrix_and_b.first,
-                                                                                        matrix_and_b.second);
+                                                                                    matrix_and_b.second);
 
     write_answer(triangle_matrix.first, triangle_matrix.second, PATH_ANSWER);
 
